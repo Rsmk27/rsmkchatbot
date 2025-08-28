@@ -20,8 +20,8 @@ import time
 # -----------------------
 # Configuration (env vars)
 # -----------------------
-TELEGRAM_TOKEN = os.getenv("8049662246:AAEpnusaUzT4dkeLS-QfEzUvhZel_GRscDw")  # BotFather token
-GEMINI_API_KEY = os.getenv("AIzaSyCnEASYDlHEoCRu90DTjlZImM-FPIFPFPc")  # Google Gen AI SDK key
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")  # BotFather token
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # Google Gen AI SDK key
 MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")  # model override
 SQLITE_PATH = os.getenv("SQLITE_PATH", "chat_history.db")
 SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT",
