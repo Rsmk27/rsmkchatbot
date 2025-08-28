@@ -1,61 +1,35 @@
-import os
-import logging
 from flask import Flask, request
-import google.generativeai as genai
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+import requests
+import os
 
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
-# Flask app for webhook
 app = Flask(__name__)
 
-# Load tokens from environment variables
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
 
-# Configure Gemini
-genai.configure(api_key=GEMINI_API_KEY)
-
-# Create Telegram app
-telegram_app = Application.builder().token(BOT_TOKEN).build()
-
-# Command: /start
-async def start(update: Update, context):
-    await update.message.reply_text("Hello! I’m your AI-powered chatbot 🤖")
-
-# Message handler (AI response)
-async def chat(update: Update, context):
-    user_message = update.message.text
-
-    # Use Gemini to generate response
-    model = genai.GenerativeModel("gemini-pro")
-    response = model.generate_content(user_message)
-
-    reply_text = response.text if response and response.text else "Sorry, I couldn’t understand that."
-    await update.message.reply_text(reply_text)
-
-# Add handlers
-telegram_app.add_handler(CommandHandler("start", start))
-telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
-
-# Flask route for Telegram webhook
-@app.route(f"/{BOT_TOKEN}", methods=["POST"])
-def webhook():
-    """Process incoming Telegram updates"""
-    update = Update.de_json(request.get_json(force=True), telegram_app.bot)
-    telegram_app.update_queue.put_nowait(update)
-    return "ok", 200
-
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return "Bot is running!", 200
+    return "Bot is running!"
 
+@app.route(f"/webhook/{TELEGRAM_TOKEN}", methods=["POST"])
+def webhook():
+    data = request.get_json()
+    if "message" in data and "text" in data["message"]:
+        chat_id = data["message"]["chat"]["id"]
+        user_message = data["message"]["text"]
+
+        # Call Gemini API here (dummy reply for now)
+        bot_reply = f"You said: {user_message}"
+
+        send_message(chat_id, bot_reply)
+
+    return "ok"
+
+def send_message(chat_id, text):
+    url = f"{TELEGRAM_API_URL}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text}
+    requests.post(url, json=payload)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
